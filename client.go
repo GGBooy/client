@@ -5,77 +5,106 @@ import (
 	"fmt"
 	"log"
 	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
-	"time"
 )
 
-type login struct {
+type loginMessage struct {
 	MessageType int // 1
-	Username string
-	Password string
-	Mode int
-	ID string
+	Username    string
+	Password    string
+	Mode        int
+	ID          string
 }
 
 type sendMessage struct {
-	Message string // 2
+	MessageType int //2
+	Message     string
 }
-
-
-
 
 var serverAddr = "192.168.3.16:20229"
+var ch chan int // sendFunc发送信号到主函数
+var logData loginMessage
+var state int // 0尚未登录 1已经登录
 
 func main() {
-	ctx, cancel, c := userLogin()
-	if c == nil {
-		log.Println("connect failed")
-		return
+	for {
+		ch = make(chan int, 64)
+		ctx, cancel := context.WithCancel(context.Background())
+		c := userLogin(ctx)
+		if c == nil {
+			log.Println("connect failed")
+			return
+		}
+
+		go Recv(ctx, c)
+		go Send(ctx, c)
+
+		ct := control(cancel, c)
+		switch ct {
+		case 0:
+			return // 退出
+		case 1:
+			// 再次for循环重置连接
+		}
 	}
-	defer cancel()
-	defer c.Close(websocket.StatusInternalError, "the sky is falling")
-	c.Ping(ctx)
+
 }
 
-func userLogin() (context.Context, context.CancelFunc, *websocket.Conn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+func userLogin(ctx context.Context) *websocket.Conn {
+	//ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	//defer cancel()
 
-	c, _, err := websocket.Dial(ctx, "ws://" + serverAddr + "/login", nil)
+	c, _, err := websocket.Dial(ctx, "ws://"+serverAddr+"/login", nil)
 	if err != nil {
 		log.Println(err)
-		return nil, nil, nil
+		return nil
 	}
 	//defer c.Close(websocket.StatusInternalError, "the sky is falling")
 
 	var uname, passwd, id string
 	var md int
-	fmt.Println("please input your username, password, mode, ID")
-	fmt.Scan(&uname, &passwd, &md, &id)
-	loginData := login{MessageType: 1, Username: uname, Password: passwd, Mode: md, ID: id}
-
-	//fmt.Println(string(b))
-
-	err = wsjson.Write(ctx, c, loginData)
-	if err != nil {
-		log.Println(err)
+	if state == 0 {
+		fmt.Println("please input your username, password, mode, ID")
+		_, _ = fmt.Scan(&uname, &passwd, &md, &id)
+		logData = loginMessage{MessageType: 1, Username: uname, Password: passwd, Mode: md, ID: id}
+	} else if state == 1 {
+		fmt.Println("please input your mode, ID")
+		_, _ = fmt.Scan(&md, &id)
+		logData.Mode = md
+		logData.ID = id
 	}
+	SendMsg(ctx, c, logData)
 
-	var v interface{}
-	err = wsjson.Read(ctx, c, &v)
-	if err != nil {
-		panic(err)
-	}
-	msg := v.(map[string]interface{})
+	msg := recvMsg(ctx, c)
 	if msg["State"] == true {
-		return ctx, cancel, c
+		println("login successful")
+		state = 1
+		return c
 	} else {
 		println(msg["Err"])
-		close(c)
-		return nil, nil, nil
+		ch <- 0
+		return nil
 	}
 }
 
-func close(c *websocket.Conn)  {
-	c.Close(websocket.StatusNormalClosure, "")
+func control(cancel context.CancelFunc, c *websocket.Conn) int {
+	for {
+		var deal = 0
+		deal = <-ch
+		switch deal {
+		case 0: //exit
+			closews(cancel, c)
+			return 0
+		case 1: //change
+			closews(cancel, c)
+			return 1
+		}
+	}
+}
+
+func closews(cancel context.CancelFunc, c *websocket.Conn) {
+	err := c.Close(websocket.StatusNormalClosure, "")
+	if err != nil {
+		log.Println(err)
+	}
+	cancel()
 }
