@@ -18,6 +18,14 @@ type loginMessage struct {
 type sendMessage struct {
 	MessageType int //2
 	Message     string
+	Sendername  string
+}
+
+type fileData struct {
+	MessageType int //3:请求发送 4:同意接收 5:拒绝接收 6:发送数据
+	Filename    string
+	Offset      int64
+	Data        []byte
 }
 
 var serverAddr = "192.168.3.16:20229"
@@ -34,10 +42,8 @@ func main() {
 			log.Println("connect failed")
 			return
 		}
-
 		go Recv(ctx, c)
 		go Send(ctx, c)
-
 		ct := control(cancel, c)
 		switch ct {
 		case 0:
