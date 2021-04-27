@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ func main() {
 	b, err := json.Marshal(t1)
 
 	var v interface{}
-	json.Unmarshal(b, &v)
+	_ = json.Unmarshal(b, &v)
 
 	//println(b)
 	msg := v.(map[string]interface{})
@@ -31,5 +31,6 @@ func main() {
 	if err != nil {
 		fmt.Println("json err:", err)
 	}
-	fmt.Println(msg["IsOK"] == true)
+	fmt.Println(msg["IsOk"] == true)
+	fmt.Println(string(1 + '0'))
 }

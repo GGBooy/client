@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
@@ -14,14 +15,26 @@ func Recv(ctx context.Context, c *websocket.Conn) {
 			return
 		default:
 			msg := recvMsg(ctx, c)
-			switch msg["MessageType"] {
-			case 2:
+			switch msg["MessageType"].(string) {
+			case "2":
+				// 普通文字消息，直接输出
 				printMsg(msg)
-			case 3:
-				recvFile(ctx, c)
-			case 4:
-				ch <- 0
+			case "3":
+				// 对 向自己发送文件的请求 做回复
+				RecverReply(ctx, c, msg)
+			case "4":
+				// 对方同意发送，开始发送
+				SegSend(ctx, c, msg)
+			case "5":
+				// 对方拒绝发送/对方没有文件/文件传输完成，啥也不用干
+				fmt.Println("refused or nothing or completed")
+			case "6":
+				// 接收到数据，写入本地
+				SegRecv(ctx, c, msg)
 
+			case "9":
+				// 服务器命令本地退出
+				ch <- 0
 			}
 		}
 	}
@@ -31,18 +44,14 @@ func recvMsg(ctx context.Context, c *websocket.Conn) map[string]interface{} {
 	var v interface{}
 	err := wsjson.Read(ctx, c, &v)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 	msg := v.(map[string]interface{})
 	return msg
 }
 
 func printMsg(msg map[string]interface{}) {
-	fmt.Println(msg["Username"])
+	fmt.Println(msg["Username"].(string))
 	fmt.Println(": ")
-	fmt.Println(msg["Message"])
-}
-
-func recvFile(cxt context.Context, c *websocket.Conn) {
-
+	fmt.Println(msg["Message"].(string))
 }

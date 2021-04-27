@@ -7,27 +7,6 @@ import (
 	"nhooyr.io/websocket"
 )
 
-type loginMessage struct {
-	MessageType int // 1
-	Username    string
-	Password    string
-	Mode        int
-	ID          string
-}
-
-type sendMessage struct {
-	MessageType int //2
-	Message     string
-	Sendername  string
-}
-
-type fileData struct {
-	MessageType int //3:请求发送 4:同意接收 5:拒绝接收 6:发送数据
-	Filename    string
-	Offset      int64
-	Data        []byte
-}
-
 var serverAddr = "192.168.3.16:20229"
 var ch chan int // sendFunc发送信号到主函数
 var logData loginMessage
@@ -47,6 +26,7 @@ func main() {
 		ct := control(cancel, c)
 		switch ct {
 		case 0:
+			println("you have quit")
 			return // 退出
 		case 1:
 			// 再次for循环重置连接
@@ -66,12 +46,11 @@ func userLogin(ctx context.Context) *websocket.Conn {
 	}
 	//defer c.Close(websocket.StatusInternalError, "the sky is falling")
 
-	var uname, passwd, id string
-	var md int
+	var uname, passwd, md, id string
 	if state == 0 {
 		fmt.Println("please input your username, password, mode, ID")
 		_, _ = fmt.Scan(&uname, &passwd, &md, &id)
-		logData = loginMessage{MessageType: 1, Username: uname, Password: passwd, Mode: md, ID: id}
+		logData = loginMessage{MessageType: "1", Username: uname, Password: passwd, Mode: md, ID: id}
 	} else if state == 1 {
 		fmt.Println("please input your mode, ID")
 		_, _ = fmt.Scan(&md, &id)
@@ -86,7 +65,7 @@ func userLogin(ctx context.Context) *websocket.Conn {
 		state = 1
 		return c
 	} else {
-		println(msg["Err"])
+		println(msg["Err"].(string))
 		ch <- 0
 		return nil
 	}

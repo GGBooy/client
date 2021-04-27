@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var b = make([]byte, 1)
+var b = make([]byte, 7)
 
 func main() {
 	fi, err := os.Open("source.txt")
@@ -24,6 +24,7 @@ func main() {
 
 	for {
 		num, err := fi.Read(b)
+		//fmt.Println(num)
 		if err != io.EOF {
 			fmt.Println(string(b)[:num])
 			// offset += int64(num)
