@@ -31,6 +31,16 @@ func Recv(ctx context.Context, c *websocket.Conn) {
 			case "6":
 				// 接收到数据，写入本地
 				SegRecv(ctx, c, msg)
+			case "0":
+				// 服务端对切换请求做出回应
+				if msg["State"].(bool) == false {
+					// 切换失败
+					fmt.Println(msg["Err"].(string))
+					change <- 3
+				} else {
+					// 切换成功
+					change <- 4
+				}
 
 			case "9":
 				// 服务器命令本地退出

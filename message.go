@@ -1,11 +1,15 @@
 package main
 
+type ReplyMessage struct {
+	MessageType string // "0"
+	State       bool
+	Err         string
+}
+
 type loginMessage struct {
 	MessageType string // "1"
 	Username    string
 	Password    string
-	Mode        string
-	ID          string
 }
 
 type sendMessage struct {
@@ -19,4 +23,10 @@ type fileData struct {
 	Filename    string
 	Offset      string
 	Data        []byte
+}
+
+type chatRequest struct {
+	MessageType string // "7"
+	Mode        string
+	ID          string
 }

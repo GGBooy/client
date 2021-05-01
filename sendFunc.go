@@ -24,7 +24,7 @@ func Send(ctx context.Context, c *websocket.Conn) {
 					ch <- 0
 				case '1':
 					// 重新连接
-					ch <- 1
+					chatReqst(ctx, c)
 				case '2':
 					// 发送文件
 					SenderRequest(ctx, c)
