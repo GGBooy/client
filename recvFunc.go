@@ -6,6 +6,7 @@ import (
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
+	"time"
 )
 
 func Recv(ctx context.Context, c *websocket.Conn) {
@@ -15,7 +16,8 @@ func Recv(ctx context.Context, c *websocket.Conn) {
 			return
 		default:
 			msg := recvMsg(ctx, c)
-			switch msg["MessageType"].(string) {
+			temp := msg
+			switch temp["MessageType"].(string) {
 			case "2":
 				// 普通文字消息，直接输出
 				printMsg(msg)
@@ -31,16 +33,16 @@ func Recv(ctx context.Context, c *websocket.Conn) {
 			case "6":
 				// 接收到数据，写入本地
 				SegRecv(ctx, c, msg)
-			case "0":
-				// 服务端对切换请求做出回应
-				if msg["State"].(bool) == false {
-					// 切换失败
-					fmt.Println(msg["Err"].(string))
-					change <- 3
-				} else {
-					// 切换成功
-					change <- 4
-				}
+			//case "0":
+			//	// 服务端对切换请求做出回应
+			//	if msg["State"].(bool) == false {
+			//		// 切换失败
+			//		fmt.Println(msg["Err"].(string))
+			//		change <- 3
+			//	} else {
+			//		// 切换成功
+			//		change <- 4
+			//	}
 
 			case "9":
 				// 服务器命令本地退出
@@ -61,7 +63,7 @@ func recvMsg(ctx context.Context, c *websocket.Conn) map[string]interface{} {
 }
 
 func printMsg(msg map[string]interface{}) {
-	fmt.Println(msg["Username"].(string))
-	fmt.Println(": ")
-	fmt.Println(msg["Message"].(string))
+	fmt.Println(time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05"))
+	fmt.Println(msg["Sendername"].(string) + ": " + msg["Message"].(string))
+	fmt.Println()
 }

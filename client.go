@@ -8,8 +8,8 @@ import (
 )
 
 var serverAddr = "192.168.3.16:20229"
-var ch = make(chan int, 64)     // sendFunc发送信号到主函数
-var change = make(chan int, 64) // 切换连接信号
+var ch = make(chan int, 64) // sendFunc发送信号到主函数
+//var change = make(chan int, 64) // 切换连接信号
 var logData loginMessage
 var chatReq chatRequest
 var state = 0 // 0尚未登录 1已经登录
@@ -18,13 +18,24 @@ func main() {
 	//ch = make(chan int, 64)
 	//change = make(chan int, 64)
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	c := userLogin(ctx)
 	if c == nil {
 		log.Println("connect failed")
 		return
 	}
+	for {
+		var flag string
+		fmt.Println("just login ? yes/no")
+		fmt.Scan(&flag)
+		if flag == "yes" {
+			break
+		} else if flag == "no" {
+			chatReqst(ctx, c)
+			break
+		}
+	}
 	go Recv(ctx, c)
-	chatReqst(ctx, c)
 	go Send(ctx, c)
 	ct := control(cancel, ctx, c)
 	switch ct {
@@ -65,14 +76,15 @@ func chatReqst(ctx context.Context, c *websocket.Conn) {
 		_, _ = fmt.Scan(&md, &id)
 		chatReq = chatRequest{MessageType: "7", Mode: md, ID: id}
 		SendMsg(ctx, c, chatReq)
-		var temp int
-		temp = <-change
-		if temp == 3 {
-			// nothing
-		} else if temp == 4 {
-			fmt.Println("connect to " + chatReq.ID + " successfully")
-			break
-		}
+		//var temp int
+		//temp = <-change
+		//if temp == 3 {
+		//	// nothing
+		//} else if temp == 4 {
+		//	fmt.Println("connect to " + chatReq.ID + " successfully")
+		//	break
+		//}
+		break
 	}
 }
 

@@ -17,7 +17,7 @@ func Send(ctx context.Context, c *websocket.Conn) {
 		default:
 			var smsg string
 			_, _ = fmt.Scan(&smsg)
-			if smsg[:3] == "###" {
+			if len(smsg) > 3 && smsg[:3] == "###" {
 				switch smsg[3] {
 				case '0':
 					// 退出
