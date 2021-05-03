@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/GGBooy/message"
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -17,6 +18,7 @@ func Send(ctx context.Context, c *websocket.Conn) {
 		default:
 			var smsg string
 			_, _ = fmt.Scan(&smsg)
+			fmt.Println()
 			if len(smsg) > 3 && smsg[:3] == "###" {
 				switch smsg[3] {
 				case '0':
@@ -31,12 +33,14 @@ func Send(ctx context.Context, c *websocket.Conn) {
 				case '3':
 					// 主动接收（离线）文件、断点续传
 					FileReq(ctx, c)
+				case 'y', 'n':
+					chFile <- smsg[3:]
 
 				}
 				// 如果发出退出指令，确保Scan阻塞前收到信号
 				time.Sleep(100 * time.Millisecond)
 			} else {
-				SendMsg(ctx, c, sendMessage{MessageType: "2", Message: smsg, Sendername: logData.Username})
+				SendMsg(ctx, c, message.SendMessage{MessageType: "2", Message: smsg, Sendername: logData.Username})
 			}
 		}
 	}

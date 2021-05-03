@@ -63,7 +63,7 @@ func recvMsg(ctx context.Context, c *websocket.Conn) map[string]interface{} {
 }
 
 func printMsg(msg map[string]interface{}) {
-	fmt.Println(time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05"))
 	fmt.Println(msg["Sendername"].(string) + ": " + msg["Message"].(string))
+	fmt.Println(time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05"))
 	fmt.Println()
 }

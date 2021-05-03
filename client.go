@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/GGBooy/message"
 	"log"
 	"nhooyr.io/websocket"
 )
 
-var serverAddr = "192.168.3.16:20229"
+var serverAddr = "127.0.0.1:20229"
 var ch = make(chan int, 64) // sendFunc发送信号到主函数
 //var change = make(chan int, 64) // 切换连接信号
-var logData loginMessage
-var chatReq chatRequest
-var state = 0 // 0尚未登录 1已经登录
+var chFile = make(chan string, 64)
+var logData message.LoginMessage
+var chatReq message.ChatRequest
+
+//var state = 0 // 0尚未登录 1已经登录
 
 func main() {
 	//ch = make(chan int, 64)
@@ -27,7 +30,7 @@ func main() {
 	for {
 		var flag string
 		fmt.Println("just login ? yes/no")
-		fmt.Scan(&flag)
+		_, _ = fmt.Scan(&flag)
 		if flag == "yes" {
 			break
 		} else if flag == "no" {
@@ -56,7 +59,7 @@ func userLogin(ctx context.Context) *websocket.Conn {
 	var uname, passwd string
 	fmt.Println("please input your username, password")
 	_, _ = fmt.Scan(&uname, &passwd)
-	logData = loginMessage{MessageType: "1", Username: uname, Password: passwd}
+	logData = message.LoginMessage{MessageType: "1", Username: uname, Password: passwd}
 
 	SendMsg(ctx, c, logData)
 	msg := recvMsg(ctx, c)
@@ -74,7 +77,7 @@ func chatReqst(ctx context.Context, c *websocket.Conn) {
 		var md, id string
 		fmt.Println("please input your mode, ID")
 		_, _ = fmt.Scan(&md, &id)
-		chatReq = chatRequest{MessageType: "7", Mode: md, ID: id}
+		chatReq = message.ChatRequest{MessageType: "7", Mode: md, ID: id}
 		SendMsg(ctx, c, chatReq)
 		//var temp int
 		//temp = <-change
@@ -94,6 +97,7 @@ func control(cancel context.CancelFunc, ctx context.Context, c *websocket.Conn) 
 		deal = <-ch
 		switch deal {
 		case 0: //exit
+			SendMsg(ctx, c, message.LogoutRequest{MessageType: "8"})
 			closews(cancel, c)
 			return 0
 			//case 1: //change
