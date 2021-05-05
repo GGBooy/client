@@ -26,6 +26,9 @@ func Recv(ctx context.Context, c *websocket.Conn) {
 				printMsg(msg)
 			case "3":
 				// 对 向自己发送文件的请求 做回复
+				if msg["Sendername"].(string) == logData.Username {
+					continue
+				}
 				sendername := msg["Sendername"].(string)
 				filename := msg["Filename"].(string)
 				lengthStr := msg["Length"].(string)
@@ -77,6 +80,9 @@ func recvMsg(ctx context.Context, c *websocket.Conn) map[string]interface{} {
 }
 
 func printMsg(msg map[string]interface{}) {
+	if msg["Sendername"].(string) == logData.Username {
+		return
+	}
 	fmt.Println(msg["Sendername"].(string) + ": " + msg["Message"].(string))
 	fmt.Println(time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05"))
 	fmt.Println()
