@@ -27,26 +27,12 @@ func main() {
 		log.Println("connect failed")
 		return
 	}
-	for {
-		var flag string
-		fmt.Println("just login ? yes/no")
-		_, _ = fmt.Scan(&flag)
-		if flag == "yes" {
-			break
-		} else if flag == "no" {
-			chatReqst(ctx, c)
-			break
-		}
-	}
+	defer c.Close(1001, "client quit")
+	chatReqst(ctx, c)
 	go Recv(ctx, c)
 	go Send(ctx, c)
-	ct := control(cancel, ctx, c)
-	switch ct {
-	case 0:
-		println("you have quit")
-		return // 退出
-	}
-
+	control(cancel, ctx, c)
+	return
 }
 
 func userLogin(ctx context.Context) *websocket.Conn {
@@ -77,6 +63,7 @@ func chatReqst(ctx context.Context, c *websocket.Conn) {
 		var md, id string
 		fmt.Println("please input your mode, ID")
 		_, _ = fmt.Scan(&md, &id)
+		fmt.Println()
 		chatReq = message.ChatRequest{MessageType: "7", Mode: md, ID: id}
 		SendMsg(ctx, c, chatReq)
 		//var temp int
@@ -98,18 +85,14 @@ func control(cancel context.CancelFunc, ctx context.Context, c *websocket.Conn) 
 		switch deal {
 		case 0: //exit
 			SendMsg(ctx, c, message.LogoutRequest{MessageType: "8"})
-			closews(cancel, c)
+			cancel()
+			//err := c.Close(websocket.StatusNormalClosure, "")
+			//if err != nil {
+			//	log.Println(err)
+			//}
 			return 0
 			//case 1: //change
 			//	chatReqst(ctx, c)
 		}
 	}
-}
-
-func closews(cancel context.CancelFunc, c *websocket.Conn) {
-	err := c.Close(websocket.StatusNormalClosure, "")
-	if err != nil {
-		log.Println(err)
-	}
-	cancel()
 }
