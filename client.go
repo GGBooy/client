@@ -8,7 +8,7 @@ import (
 	"nhooyr.io/websocket"
 )
 
-var serverAddr = "127.0.0.1:20229"
+var serverAddr = "122.9.77.149:20229"
 var ch = make(chan int, 64) // sendFunc发送信号到主函数
 //var change = make(chan int, 64) // 切换连接信号
 var chFile = make(chan string, 64)
@@ -61,7 +61,7 @@ func userLogin(ctx context.Context) *websocket.Conn {
 func chatReqst(ctx context.Context, c *websocket.Conn) {
 	for {
 		var md, id string
-		fmt.Println("please input your mode, ID")
+		fmt.Println("single/group(0/1)? ID?")
 		_, _ = fmt.Scan(&md, &id)
 		fmt.Println()
 		chatReq = message.ChatRequest{MessageType: "7", Mode: md, ID: id}
